@@ -1,0 +1,2 @@
+server1 ansible_host=192.168.64.133
+server2 ansible_host=192.168.64.134
