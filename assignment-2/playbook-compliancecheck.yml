@@ -1,0 +1,98 @@
+-
+  name: 'CIS Compliance Check'
+  hosts: localhost
+  vars:
+    TIMESTAMP: '{{ansible_date_time.date}} {{ansible_date_time.time}}'
+    LOG_PATH: /home/adminshar/Desktop/'{{ ansible_date_time.date }}'_CIS_Compliance_Check.log
+  tasks:
+### 1. Ensure root login disabled
+    - name: '1. Ensure root login disabled'
+      lineinfile:
+        path: /home/adminshar/Documents/test_case #to be changed
+        regexp: '(?i)^\s*permitrootlogin\s+no\s*$'
+        state: absent
+      check_mode: yes
+      register: ROOT_CHECK
+
+    - name: '1. Result'
+      debug:
+        msg: '{% if ROOT_CHECK.found %}[PASS] - Root Login is disabled.{% else %}[FAIL] - Root Login is NOT disabled.{% endif %}'
+      register: ROOT_RESULT
+###
+
+### 2. Ensure SSH PermitEmptyPasswords is disabled
+    - name: '1. Ensure SSH PermitEmptyPasswords is disabled'
+      lineinfile:
+        path: /home/adminshar/Documents/test_case #to be changed
+        regexp: '(?i)^\s*permitemptypasswords\s+no\s*$'
+        state: absent
+      check_mode: yes
+      register: EMPTYPW_CHECK
+
+    - name: '2. Result'
+      debug:
+        msg: '{% if EMPTYPW_CHECK.found %}[PASS] - PermitEmptyPasswords is disabled.{% else %}[FAIL] - PermitEmptyPasswords is NOT disabled.{% endif %}'
+      register: EMPTYPW_RESULT
+###
+
+### 3. Ensure SSH Protocol is set to 2
+    - name: '3. Ensure SSH Protocol is set to 2'
+      lineinfile:
+        path: /home/adminshar/Documents/test_case #to be changed
+        regexp: '(?i)^\s*protocol\s+2\s*$'
+        state: absent
+      check_mode: yes
+      register: PROTOCOL_CHECK
+
+    - name: '3. Result'
+      debug:
+        msg: '{% if PROTOCOL_CHECK.found %}[PASS] - SSH Protocol is set to 2.{% else %}[FAIL] - SSH Protocol is NOT set to 2.{% endif %}'
+      register: PROTOCOL_RESULT
+###
+
+### 4. Ensure password expiration is 90 days or less
+    - name: '4. Ensure password expiration is 90 days or less'
+      lineinfile:
+        path: /home/adminshar/Documents/test_case #to be changed
+        regexp: '(?i)^\s*PASS_MAX_DAYS\s+([0-9]|[1-8][0-9]|90)\s*$'
+        state: absent
+      check_mode: yes
+      register: PW_EXP_CHECK
+
+    - name: '4. Result'
+      debug:
+        msg: '{% if PW_EXP_CHECK.found %}[PASS] - Password Expiration is 90 days or less.{% else %}[FAIL] - Password Expiration is MORE THAN 90 days.{% endif %}'
+      register: PW_EXP_RESULT
+###
+
+### 5. Ensure system accounts are non-login
+    - name: '5. Ensure system accounts are non-login'
+      shell: |
+        egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false" && $7!="/sbin/nologin") {print}'
+      register: SYS_ACCT_LOGIN_CHECK
+
+    - name: '5. Result'
+      debug:
+        msg: '{% if SYS_ACCT_LOGIN_CHECK.stdout == "" %}[PASS] - System Accounts are non-login.{% else %}[FAIL] - SOME System Accounts are NOT non-login.{% endif %}'
+      register: SYS_ACCT_LOGIN_RESULT
+###
+
+# Summary Log
+    - name: "Save Compliance Check Log"
+      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'                                                                
+      with_items:
+        - '{{ TIMESTAMP }}'
+        - '{{ ROOT_RESULT.msg }}'
+        - '{{ EMPTYPW_RESULT.msg }}'
+        - '{{ PROTOCOL_RESULT.msg }}'
+        - '{{ PW_EXP_RESULT.msg }}'
+        - '{{ SYS_ACCT_LOGIN_RESULT.msg }}'
+
+# Counter
+    # - name: "Error Counter"
+    #   shell: grep -ic "FAIL" '{{LOG_PATH}}'          
+    #   register:	COUNTER
+
+    # - debug:
+    #     msg: '{{COUNTER.stdout}}'
+
