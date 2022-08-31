@@ -8,7 +8,7 @@
 ### 1. Ensure root login disabled
     - name: '1. Ensure root login disabled'
       lineinfile:
-        path: /home/adminshar/Documents/test_case #to be changed
+        path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitrootlogin\s+no\s*$'
         state: absent
       check_mode: yes
@@ -23,7 +23,7 @@
 ### 2. Ensure SSH PermitEmptyPasswords is disabled
     - name: '1. Ensure SSH PermitEmptyPasswords is disabled'
       lineinfile:
-        path: /home/adminshar/Documents/test_case #to be changed
+        path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitemptypasswords\s+no\s*$'
         state: absent
       check_mode: yes
@@ -38,7 +38,7 @@
 ### 3. Ensure SSH Protocol is set to 2
     - name: '3. Ensure SSH Protocol is set to 2'
       lineinfile:
-        path: /home/adminshar/Documents/test_case #to be changed
+        path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*protocol\s+2\s*$'
         state: absent
       check_mode: yes
@@ -53,7 +53,7 @@
 ### 4. Ensure password expiration is 90 days or less
     - name: '4. Ensure password expiration is 90 days or less'
       lineinfile:
-        path: /home/adminshar/Documents/test_case #to be changed
+        path: /etc/login.defs
         regexp: '(?i)^\s*PASS_MAX_DAYS\s+([0-9]|[1-8][0-9]|90)\s*$'
         state: absent
       check_mode: yes
