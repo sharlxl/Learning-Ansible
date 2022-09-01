@@ -1,9 +1,9 @@
 -
   name: 'CIS Compliance Check'
-  hosts: localhost
+  hosts: server1
   vars:
     TIMESTAMP: '{{ansible_date_time.date}} {{ansible_date_time.time}}'
-    LOG_PATH: /home/adminshar/Desktop/'{{ ansible_date_time.date }}'_CIS_Compliance_Check.log
+    LOG_PATH: /home/adminshar/Desktop/'{{ ansible_date_time.date }}'_'{{ansible_hostname}}'_CIS_Compliance_Check.log
   tasks:
 ### 1. Ensure root login disabled
     - name: '1. Ensure root login disabled'
@@ -16,7 +16,7 @@
 
     - name: '1. Result'
       debug:
-        msg: '{% if ROOT_CHECK.found %}[PASS] - Root Login is disabled.{% else %}[FAIL] - Root Login is NOT disabled.{% endif %}'
+        msg: '{% if ROOT_CHECK.found %}[OK] - Root Login is disabled.{% else %}[NON-COMPLIANCE] - Root Login is NOT disabled.{% endif %}'
       register: ROOT_RESULT
 ###
 
@@ -31,7 +31,7 @@
 
     - name: '2. Result'
       debug:
-        msg: '{% if EMPTYPW_CHECK.found %}[PASS] - PermitEmptyPasswords is disabled.{% else %}[FAIL] - PermitEmptyPasswords is NOT disabled.{% endif %}'
+        msg: '{% if EMPTYPW_CHECK.found %}[OK] - PermitEmptyPasswords is disabled.{% else %}[NON-COMPLIANCE] - PermitEmptyPasswords is NOT disabled.{% endif %}'
       register: EMPTYPW_RESULT
 ###
 
@@ -46,7 +46,7 @@
 
     - name: '3. Result'
       debug:
-        msg: '{% if PROTOCOL_CHECK.found %}[PASS] - SSH Protocol is set to 2.{% else %}[FAIL] - SSH Protocol is NOT set to 2.{% endif %}'
+        msg: '{% if PROTOCOL_CHECK.found %}[OK] - SSH Protocol is set to 2.{% else %}[NON-COMPLIANCE] - SSH Protocol is NOT set to 2.{% endif %}'
       register: PROTOCOL_RESULT
 ###
 
@@ -61,7 +61,7 @@
 
     - name: '4. Result'
       debug:
-        msg: '{% if PW_EXP_CHECK.found %}[PASS] - Password Expiration is 90 days or less.{% else %}[FAIL] - Password Expiration is MORE THAN 90 days.{% endif %}'
+        msg: '{% if PW_EXP_CHECK.found %}[OK] - Password Expiration is 90 days or less.{% else %}[NON-COMPLIANCE] - Password Expiration is MORE THAN 90 days.{% endif %}'
       register: PW_EXP_RESULT
 ###
 
@@ -73,7 +73,7 @@
 
     - name: '5. Result'
       debug:
-        msg: '{% if SYS_ACCT_LOGIN_CHECK.stdout == "" %}[PASS] - System Accounts are non-login.{% else %}[FAIL] - SOME System Accounts are NOT non-login.{% endif %}'
+        msg: '{% if SYS_ACCT_LOGIN_CHECK.stdout == "" %}[OK] - System Accounts are non-login.{% else %}[NON-COMPLIANCE] - SOME System Accounts are NOT non-login.{% endif %}'
       register: SYS_ACCT_LOGIN_RESULT
 ###
 
