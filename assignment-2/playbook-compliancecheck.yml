@@ -1,5 +1,6 @@
+---
 -
-  name: 'CIS Compliance Check'
+  name: 'CIS Compliance Check( Assignment 1b )'
   hosts: server1
   vars:
     TIMESTAMP: '{{ansible_date_time.date}} {{ansible_date_time.time}}'
@@ -8,10 +9,18 @@
 ### 1. Ensure root login disabled
     - name: '1. Ensure root login disabled'
       lineinfile:
+      # lineinfile made to be use for modifying/replacing a line, adding a new line, removing a line in a file if found
         path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitrootlogin\s+no\s*$'
         state: absent
+        # state=present means if the line exist, to amend the existing line.
+        # state=absent means to remove if that line exists
       check_mode: yes
+      #In check mode, Ansible runs without making any changes on remote systems.
+
+      ##in short the ^ state and check_mode, is only to check if the line exist and don't remove it. 
+      ## state=present line='PermitRootLogin no' check_mode=yes, will work as well. but you will need to remmeber to put in the line parameter
+      ## cause essentially it is just telling ansible, if the string is found, dont modify the line.
       register: ROOT_CHECK
 
     - name: '1. Result'
@@ -79,7 +88,8 @@
 
 # Summary Log
     - name: "Save Compliance Check Log"
-      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'                                                                
+      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'         
+      # Looping through the saved variables and appending it to a log file.                                                       
       with_items:
         - '{{ TIMESTAMP }}'
         - '{{ ROOT_RESULT.msg }}'
