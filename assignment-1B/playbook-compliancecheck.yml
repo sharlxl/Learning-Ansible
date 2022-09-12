@@ -1,15 +1,14 @@
 ---
--
-  name: 'CIS Compliance Check( Assignment 1b )'
+- name: "CIS Compliance Check( Assignment 1b )"
   hosts: server1
   vars:
-    TIMESTAMP: '{{ansible_date_time.date}} {{ansible_date_time.time}}'
-    LOG_PATH: /home/adminshar/Desktop/'{{ ansible_date_time.date }}'_'{{ansible_hostname}}'_CIS_Compliance_Check.log
+    TIMESTAMP: "{{ansible_date_time.date}} {{ansible_date_time.time}}"
+    LOG_PATH: /home/adminshar/Desktop/{{ ansible_date_time.date }}_{{ansible_hostname}}_CIS_Compliance_Check.log
   tasks:
-### 1. Ensure root login disabled
-    - name: '1. Ensure root login disabled'
+    ### 1. Ensure root login disabled
+    - name: "1. Ensure root login disabled"
       lineinfile:
-      # lineinfile made to be use for modifying/replacing a line, adding a new line, removing a line in a file if found
+        # lineinfile made to be use for modifying/replacing a line, adding a new line, removing a line in a file if found
         path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitrootlogin\s+no\s*$'
         state: absent
@@ -18,19 +17,19 @@
       check_mode: yes
       #In check mode, Ansible runs without making any changes on remote systems.
 
-      ##in short the ^ state and check_mode, is only to check if the line exist and don't remove it. 
+      ##in short the ^ state and check_mode, is only to check if the line exist and don't remove it.
       ## state=present line='PermitRootLogin no' check_mode=yes, will work as well. but you will need to remmeber to put in the line parameter
       ## cause essentially it is just telling ansible, if the string is found, dont modify the line.
       register: ROOT_CHECK
 
-    - name: '1. Result'
+    - name: "1. Result"
       debug:
-        msg: '{% if ROOT_CHECK.found %}[OK] - Root Login is disabled.{% else %}[NON-COMPLIANCE] - Root Login is NOT disabled.{% endif %}'
+        msg: "{% if ROOT_CHECK.found %}[OK] - Root Login is disabled.{% else %}[NON-COMPLIANCE] - Root Login is NOT disabled.{% endif %}"
       register: ROOT_RESULT
-###
+    ###
 
-### 2. Ensure SSH PermitEmptyPasswords is disabled
-    - name: '1. Ensure SSH PermitEmptyPasswords is disabled'
+    ### 2. Ensure SSH PermitEmptyPasswords is disabled
+    - name: "1. Ensure SSH PermitEmptyPasswords is disabled"
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitemptypasswords\s+no\s*$'
@@ -38,14 +37,14 @@
       check_mode: yes
       register: EMPTYPW_CHECK
 
-    - name: '2. Result'
+    - name: "2. Result"
       debug:
-        msg: '{% if EMPTYPW_CHECK.found %}[OK] - PermitEmptyPasswords is disabled.{% else %}[NON-COMPLIANCE] - PermitEmptyPasswords is NOT disabled.{% endif %}'
+        msg: "{% if EMPTYPW_CHECK.found %}[OK] - PermitEmptyPasswords is disabled.{% else %}[NON-COMPLIANCE] - PermitEmptyPasswords is NOT disabled.{% endif %}"
       register: EMPTYPW_RESULT
-###
+    ###
 
-### 3. Ensure SSH Protocol is set to 2
-    - name: '3. Ensure SSH Protocol is set to 2'
+    ### 3. Ensure SSH Protocol is set to 2
+    - name: "3. Ensure SSH Protocol is set to 2"
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*protocol\s+2\s*$'
@@ -53,14 +52,14 @@
       check_mode: yes
       register: PROTOCOL_CHECK
 
-    - name: '3. Result'
+    - name: "3. Result"
       debug:
-        msg: '{% if PROTOCOL_CHECK.found %}[OK] - SSH Protocol is set to 2.{% else %}[NON-COMPLIANCE] - SSH Protocol is NOT set to 2.{% endif %}'
+        msg: "{% if PROTOCOL_CHECK.found %}[OK] - SSH Protocol is set to 2.{% else %}[NON-COMPLIANCE] - SSH Protocol is NOT set to 2.{% endif %}"
       register: PROTOCOL_RESULT
-###
+    ###
 
-### 4. Ensure password expiration is 90 days or less
-    - name: '4. Ensure password expiration is 90 days or less'
+    ### 4. Ensure password expiration is 90 days or less
+    - name: "4. Ensure password expiration is 90 days or less"
       lineinfile:
         path: /etc/login.defs
         regexp: '(?i)^\s*PASS_MAX_DAYS\s+([0-9]|[1-8][0-9]|90)\s*$'
@@ -68,41 +67,45 @@
       check_mode: yes
       register: PW_EXP_CHECK
 
-    - name: '4. Result'
+    - name: "4. Result"
       debug:
-        msg: '{% if PW_EXP_CHECK.found %}[OK] - Password Expiration is 90 days or less.{% else %}[NON-COMPLIANCE] - Password Expiration is MORE THAN 90 days.{% endif %}'
+        msg: "{% if PW_EXP_CHECK.found %}[OK] - Password Expiration is 90 days or less.{% else %}[NON-COMPLIANCE] - Password Expiration is MORE THAN 90 days.{% endif %}"
       register: PW_EXP_RESULT
-###
+    ###
 
-### 5. Ensure system accounts are non-login
-    - name: '5. Ensure system accounts are non-login'
+    ### 5. Ensure system accounts are non-login
+    - name: "5. Ensure system accounts are non-login"
       shell: |
         egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false" && $7!="/sbin/nologin") {print}'
       register: SYS_ACCT_LOGIN_CHECK
 
-    - name: '5. Result'
+    - name: "5. Result"
       debug:
         msg: '{% if SYS_ACCT_LOGIN_CHECK.stdout == "" %}[OK] - System Accounts are non-login.{% else %}[NON-COMPLIANCE] - SOME System Accounts are NOT non-login.{% endif %}'
       register: SYS_ACCT_LOGIN_RESULT
-###
+    ###
 
-# Summary Log
+    # Summary Log
     - name: "Save Compliance Check Log"
-      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'         
-      # Looping through the saved variables and appending it to a log file.                                                       
-      with_items:
-        - '{{ TIMESTAMP }}'
-        - '{{ ROOT_RESULT.msg }}'
-        - '{{ EMPTYPW_RESULT.msg }}'
-        - '{{ PROTOCOL_RESULT.msg }}'
-        - '{{ PW_EXP_RESULT.msg }}'
-        - '{{ SYS_ACCT_LOGIN_RESULT.msg }}'
-
-# Counter
-    # - name: "Error Counter"
-    #   shell: grep -ic "FAIL" '{{LOG_PATH}}'          
-    #   register:	COUNTER
-
-    # - debug:
-    #     msg: '{{COUNTER.stdout}}'
+      copy:
+        content: |
+          {{ TIMESTAMP }}
+          {{ ROOT_RESULT.msg }}
+          {{ EMPTYPW_RESULT.msg }}
+          {{ PROTOCOL_RESULT.msg }}
+          {{ PW_EXP_RESULT.msg }}
+          {{ SYS_ACCT_LOGIN_RESULT.msg }}
+        dest: "{{ LOG_PATH }}"
+      delegate_to: localhost
+#    - name: "Save Compliance Check Log"
+#      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'
+#      # Looping through the saved variables and appending it to a log file.
+#      delegate_to: localhost
+#      with_items:
+#        - '{{ TIMESTAMP }}'
+#        - '{{ ROOT_RESULT.msg }}'
+#        - '{{ EMPTYPW_RESULT.msg }}'
+#        - '{{ PROTOCOL_RESULT.msg }}'
+#        - '{{ PW_EXP_RESULT.msg }}'
+#        - '{{ SYS_ACCT_LOGIN_RESULT.msg }}'
 
