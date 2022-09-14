@@ -3,7 +3,7 @@
   hosts: server1
   vars:
     TIMESTAMP: "{{ansible_date_time.date}} {{ansible_date_time.time}}"
-    LOG_PATH: /home/adminshar/Desktop/{{ ansible_date_time.date }}_{{ansible_hostname}}_CIS_Compliance_Check.log
+    SUMMARY_LOG_PATH: /home/adminshar/Desktop/{{ ansible_date_time.date }}_{{ansible_hostname}}_CIS_Compliance_Check.log
   tasks:
     ### 1. Ensure root login disabled
     - name: "1. Ensure root login disabled"
@@ -29,7 +29,7 @@
     ###
 
     ### 2. Ensure SSH PermitEmptyPasswords is disabled
-    - name: "1. Ensure SSH PermitEmptyPasswords is disabled"
+    - name: "2. Ensure SSH PermitEmptyPasswords is disabled"
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '(?i)^\s*permitemptypasswords\s+no\s*$'
@@ -75,8 +75,7 @@
 
     ### 5. Ensure system accounts are non-login
     - name: "5. Ensure system accounts are non-login"
-      shell: |
-        egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false" && $7!="/sbin/nologin") {print}'
+      shell: egrep -v "^\+" /etc/passwd | awk -F':' '($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<1000 && $7!="/usr/sbin/nologin" && $7!="/bin/false" && $7!="/sbin/nologin") {print}'
       register: SYS_ACCT_LOGIN_CHECK
 
     - name: "5. Result"
@@ -88,6 +87,8 @@
     # Summary Log
     - name: "Save Compliance Check Log"
       copy:
+        # copy is used to duplicate documents, it replaces not appends
+        # | is to populate the variables in a new line
         content: |
           {{ TIMESTAMP }}
           {{ ROOT_RESULT.msg }}
@@ -95,17 +96,13 @@
           {{ PROTOCOL_RESULT.msg }}
           {{ PW_EXP_RESULT.msg }}
           {{ SYS_ACCT_LOGIN_RESULT.msg }}
-        dest: "{{ LOG_PATH }}"
+        dest: "{{ SUMMARY_LOG_PATH }}"
       delegate_to: localhost
-#    - name: "Save Compliance Check Log"
-#      shell: echo '{{ item }}' >> '{{ LOG_PATH }}'
-#      # Looping through the saved variables and appending it to a log file.
-#      delegate_to: localhost
-#      with_items:
-#        - '{{ TIMESTAMP }}'
-#        - '{{ ROOT_RESULT.msg }}'
-#        - '{{ EMPTYPW_RESULT.msg }}'
-#        - '{{ PROTOCOL_RESULT.msg }}'
-#        - '{{ PW_EXP_RESULT.msg }}'
-#        - '{{ SYS_ACCT_LOGIN_RESULT.msg }}'
 
+    # Show only Non-compliant results
+    - name: "Remove OK results"
+      lineinfile:
+        path: "{{ SUMMARY_LOG_PATH }}"
+        search_string: "[OK]"
+        state: absent
+      delegate_to: localhost
